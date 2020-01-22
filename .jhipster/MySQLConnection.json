@@ -1,0 +1,40 @@
+{
+    "name": "MySQLConnection",
+    "fields": [
+        {
+            "fieldName": "name",
+            "fieldType": "String"
+        },
+        {
+            "fieldName": "hostname",
+            "fieldType": "String"
+        },
+        {
+            "fieldName": "port",
+            "fieldType": "Integer"
+        },
+        {
+            "fieldName": "dbName",
+            "fieldType": "String"
+        },
+        {
+            "fieldName": "username",
+            "fieldType": "String"
+        },
+        {
+            "fieldName": "password",
+            "fieldType": "String"
+        }
+    ],
+    "relationships": [],
+    "changelogDate": "20200122083804",
+    "entityTableName": "my_sql_connection",
+    "dto": "no",
+    "pagination": "no",
+    "service": "no",
+    "jpaMetamodelFiltering": false,
+    "fluentMethods": true,
+    "readOnly": false,
+    "clientRootFolder": "",
+    "applications": "*"
+}

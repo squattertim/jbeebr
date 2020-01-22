@@ -1,0 +1,27 @@
+{
+  "jbeebrApp": {
+    "mySQLConnection": {
+      "home": {
+        "title": "My SQL Connections",
+        "createLabel": "Create a new My SQL Connection",
+        "createOrEditLabel": "Create or edit a My SQL Connection",
+        "notFound": "No My SQL Connections found"
+      },
+      "created": "A new My SQL Connection is created with identifier {{ param }}",
+      "updated": "A My SQL Connection is updated with identifier {{ param }}",
+      "deleted": "A My SQL Connection is deleted with identifier {{ param }}",
+      "delete": {
+        "question": "Are you sure you want to delete My SQL Connection {{ id }}?"
+      },
+      "detail": {
+        "title": "My SQL Connection"
+      },
+      "name": "Name",
+      "hostname": "Hostname",
+      "port": "Port",
+      "dbName": "Db Name",
+      "username": "Username",
+      "password": "Password"
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "jbeebrApp": {
+    "mySQLConnection": {
+      "home": {
+        "title": "My SQL Connections",
+        "createLabel": "Vytvořit My SQL Connection",
+        "createOrEditLabel": "Vytvořit nebo upravit My SQL Connection",
+        "notFound": "No My SQL Connections found"
+      },
+      "created": "Byl vytvořen potomek entity My SQL Connection s identifikátorem {{ param }}",
+      "updated": "Potomek entity My SQL Connection s identifikátorem {{ param }} byl upravený.",
+      "deleted": "Potomek entity My SQL Connection s identifikátorem {{ param }} bol smazaný.",
+      "delete": {
+        "question": "Jste si jisti, že chcete smazat My SQL Connection {{ id }}?"
+      },
+      "detail": {
+        "title": "My SQL Connection"
+      },
+      "name": "Name",
+      "hostname": "Hostname",
+      "port": "Port",
+      "dbName": "Db Name",
+      "username": "Username",
+      "password": "Password"
+    }
+  }
+}
