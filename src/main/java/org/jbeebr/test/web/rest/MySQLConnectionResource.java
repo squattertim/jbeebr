@@ -118,6 +118,12 @@ public class MySQLConnectionResource {
         return ResponseEntity.noContent().headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, ENTITY_NAME, id)).build();
     }
 
+    /**
+     * {@code GET  /my-sql-connections/:id/schemas} : get all the mySQLConnection schemas.
+     *
+     * @param id
+     * @return list od DB schemas
+     */
     @GetMapping("/my-sql-connections/{id}/schemas")
     public List<DatabaseSchema> getMySQLConnectionSchemas(@PathVariable String id) {
         log.info("REST request to get schemas of MySQLConnection : {}", id);
@@ -144,19 +150,12 @@ public class MySQLConnectionResource {
         return schemas;
     }
 
-    private Connection getConnection(Optional<MySQLConnection> mySQLConnection) throws ClassNotFoundException, SQLException {
-        String userName = mySQLConnection.get().getUsername();
-        String password = mySQLConnection.get().getPassword();
-        String mySQLPort = mySQLConnection.get().getPort() != null ? mySQLConnection.get().getPort().toString() : "";
-        String hostUrl = mySQLConnection.get().getHostname();
-        // Setup the connection with the DB
-
-        Class.forName("com.mysql.cj.jdbc.Driver");
-
-        return DriverManager.getConnection("jdbc:mysql://" + hostUrl
-            + ":" + mySQLPort, userName, password);
-    }
-
+    /**
+     * {@code GET  /my-sql-connections/:id/tables} : get all the mySQLConnection tables.
+     *
+     * @param id
+     * @return list od DB tables
+     */
     @GetMapping("/my-sql-connections/{id}/tables")
     public List<DatabaseTable> getMySQLConnectionTables(@PathVariable String id) {
         log.info("REST request to get tables of MySQLConnection : {}", id);
@@ -188,6 +187,13 @@ public class MySQLConnectionResource {
         return tables;
     }
 
+    /**
+     * {@code GET  /my-sql-connections/:id/columns/:tableName} : get all the mySQLConnection columns of the table.
+     *
+     * @param id
+     * @param tableName
+     * @return all columns of given table
+     */
     @GetMapping("/my-sql-connections/{id}/columns/{tableName}")
     public List<DatabaseColumn> getMySQLConnectionColumns(@PathVariable String id, @PathVariable String tableName) {
         log.info("REST request to get columns of MySQLConnection : {}", id);
@@ -219,6 +225,13 @@ public class MySQLConnectionResource {
         return columns;
     }
 
+    /**
+     * {@code GET  /my-sql-connections/:id/data/:tableName} : get all the data from DB table.
+     *
+     * @param id
+     * @param tableName
+     * @return list of all the data of given table
+     */
     @GetMapping("/my-sql-connections/{id}/data/{tableName}")
     public List<DatabaseData> getMySQLConnectionTableData(@PathVariable String id, @PathVariable String tableName) {
         log.info("REST request to get columns of MySQLConnection : {}", id);
@@ -262,6 +275,9 @@ public class MySQLConnectionResource {
                                     + columnName + ": " + intValue);
                                 data.addValue(col.getName(), intValue);
                                 break;
+                            default:
+                                log.error("Unsupported column type " + tableName + " = "
+                                    + columnName + ": " + dataType);
                         }
                     }
                     databaseData.add(data);
@@ -274,6 +290,19 @@ public class MySQLConnectionResource {
         }
 
         return databaseData;
+    }
+
+    private Connection getConnection(Optional<MySQLConnection> mySQLConnection) throws ClassNotFoundException, SQLException {
+        String userName = mySQLConnection.get().getUsername();
+        String password = mySQLConnection.get().getPassword();
+        String mySQLPort = mySQLConnection.get().getPort() != null ? mySQLConnection.get().getPort().toString() : "";
+        String hostUrl = mySQLConnection.get().getHostname();
+        // Setup the connection with the DB
+
+        Class.forName("com.mysql.cj.jdbc.Driver");
+
+        return DriverManager.getConnection("jdbc:mysql://" + hostUrl
+            + ":" + mySQLPort, userName, password);
     }
 
 }
