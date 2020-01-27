@@ -1,6 +1,6 @@
 package org.jbeebr.test.web.rest;
 
-import org.jbeebr.test.domain.MySQLConnection;
+import org.jbeebr.test.domain.*;
 import org.jbeebr.test.repository.MySQLConnectionRepository;
 import org.jbeebr.test.web.rest.errors.BadRequestAlertException;
 
@@ -10,12 +10,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional; 
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -116,4 +117,163 @@ public class MySQLConnectionResource {
         mySQLConnectionRepository.deleteById(id);
         return ResponseEntity.noContent().headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, ENTITY_NAME, id)).build();
     }
+
+    @GetMapping("/my-sql-connections/{id}/schemas")
+    public List<DatabaseSchema> getMySQLConnectionSchemas(@PathVariable String id) {
+        log.info("REST request to get schemas of MySQLConnection : {}", id);
+        Optional<MySQLConnection> mySQLConnection = mySQLConnectionRepository.findById(id);
+
+        List<DatabaseSchema> schemas = new ArrayList<DatabaseSchema>();
+
+        if(mySQLConnection.isPresent()) {
+            try {
+                Connection conn = getConnection(mySQLConnection);
+                // --- LISTING DATABASE SCHEMA NAMES ---
+                ResultSet resultSet = conn.getMetaData().getCatalogs();
+                while (resultSet.next()) {
+                    log.info("Schema Name = " + resultSet.getString("TABLE_CAT"));
+                    schemas.add(new DatabaseSchema(resultSet.getString("TABLE_CAT")));
+                }
+                resultSet.close();
+
+            } catch (ClassNotFoundException | SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return schemas;
+    }
+
+    private Connection getConnection(Optional<MySQLConnection> mySQLConnection) throws ClassNotFoundException, SQLException {
+        String userName = mySQLConnection.get().getUsername();
+        String password = mySQLConnection.get().getPassword();
+        String mySQLPort = mySQLConnection.get().getPort() != null ? mySQLConnection.get().getPort().toString() : "";
+        String hostUrl = mySQLConnection.get().getHostname();
+        // Setup the connection with the DB
+
+        Class.forName("com.mysql.cj.jdbc.Driver");
+
+        return DriverManager.getConnection("jdbc:mysql://" + hostUrl
+            + ":" + mySQLPort, userName, password);
+    }
+
+    @GetMapping("/my-sql-connections/{id}/tables")
+    public List<DatabaseTable> getMySQLConnectionTables(@PathVariable String id) {
+        log.info("REST request to get tables of MySQLConnection : {}", id);
+        Optional<MySQLConnection> mySQLConnection = mySQLConnectionRepository.findById(id);
+
+        List<DatabaseTable> tables = new ArrayList<DatabaseTable>();
+
+        if(mySQLConnection.isPresent()) {
+            try {
+                String databaseName = mySQLConnection.get().getDbName();
+                Connection conn = getConnection(mySQLConnection);
+                // --- LISTING DATABASE TABLE NAMES ---
+                String[] types = {"TABLE"};
+                ResultSet resultSet = conn.getMetaData()
+                    .getTables(databaseName, null, "%", types);
+                String tableName = "";
+                while (resultSet.next()) {
+                    tableName = resultSet.getString(3);
+                    log.info("Table Name = " + tableName);
+                    tables.add(new DatabaseTable(tableName));
+                }
+                resultSet.close();
+
+            } catch (ClassNotFoundException | SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return tables;
+    }
+
+    @GetMapping("/my-sql-connections/{id}/columns/{tableName}")
+    public List<DatabaseColumn> getMySQLConnectionColumns(@PathVariable String id, @PathVariable String tableName) {
+        log.info("REST request to get columns of MySQLConnection : {}", id);
+        Optional<MySQLConnection> mySQLConnection = mySQLConnectionRepository.findById(id);
+
+        List<DatabaseColumn> columns = new ArrayList<DatabaseColumn>();
+
+        if(mySQLConnection.isPresent()) {
+            try {
+                String databaseName = mySQLConnection.get().getDbName();
+                Connection conn = getConnection(mySQLConnection);
+                // --- LISTING DATABASE COLUMN NAMES ---
+                DatabaseMetaData meta = conn.getMetaData();
+                ResultSet resultSet = meta.getColumns(databaseName, null, tableName, "%");
+                while (resultSet.next()) {
+                    String columnName = resultSet.getString(4);
+                    Integer dataType = resultSet.getInt(5);
+                    log.info("Column Name of table " + tableName + " = "
+                        + columnName);
+                    columns.add(new DatabaseColumn(columnName, dataType));
+                }
+                resultSet.close();
+
+            } catch (ClassNotFoundException | SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return columns;
+    }
+
+    @GetMapping("/my-sql-connections/{id}/data/{tableName}")
+    public List<DatabaseData> getMySQLConnectionTableData(@PathVariable String id, @PathVariable String tableName) {
+        log.info("REST request to get columns of MySQLConnection : {}", id);
+        Optional<MySQLConnection> mySQLConnection = mySQLConnectionRepository.findById(id);
+
+        List<DatabaseColumn> columns = new ArrayList<DatabaseColumn>();
+        List<DatabaseData> databaseData = new ArrayList<DatabaseData>();
+
+        if(mySQLConnection.isPresent()) {
+            try {
+                String databaseName = mySQLConnection.get().getDbName();
+                Connection conn = getConnection(mySQLConnection);
+                // --- LISTING DATABASE COLUMN NAMES ---
+                DatabaseMetaData meta = conn.getMetaData();
+                Statement stmt = conn.createStatement();
+                ResultSet resultSet = meta.getColumns(databaseName, null, tableName, "%");
+                while (resultSet.next()) {
+                    String columnName = resultSet.getString(4);
+                    Integer dataType = resultSet.getInt(5);
+                    log.info("Column Name of table " + tableName + " = "
+                        + columnName);
+                    columns.add(new DatabaseColumn(columnName, dataType));
+                }
+
+                resultSet = stmt.executeQuery("SELECT * FROM " + databaseName + "." + tableName);
+                while (resultSet.next()) {
+                    DatabaseData data = new DatabaseData();
+                    for (DatabaseColumn col : columns) {
+                        String columnName = col.getName();
+                        int dataType = col.getDataType();
+                        switch (dataType) {
+                            case Types.CHAR:
+                                String strValue = resultSet.getString(columnName);
+                                log.info("Column Value of table " + tableName + " = "
+                                    + columnName + ": " + strValue);
+                                data.addValue(col.getName(), strValue);
+                                break;
+                            case Types.INTEGER:
+                                Integer intValue = resultSet.getInt(columnName);
+                                log.info("Column Value of table " + tableName + " = "
+                                    + columnName + ": " + intValue);
+                                data.addValue(col.getName(), intValue);
+                                break;
+                        }
+                    }
+                    databaseData.add(data);
+                }
+                resultSet.close();
+
+            } catch (ClassNotFoundException | SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return databaseData;
+    }
+
 }
